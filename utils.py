@@ -349,3 +349,22 @@ def inverse_perspective_transform(original_image, warped, left_fitx, right_fitx,
     # Combine the result with the original image
     result = cv2.addWeighted(original_image, 1, newwarp, 0.3, 0)
     return result
+
+
+def add_debug_image(base_image, debug_image, position):
+    width_offset = base_image.shape[1]//3
+    height_offset = base_image.shape[0]//3
+    y_offset = (position//3)*height_offset
+    x_offset = (position%3)*(width_offset)
+    print(y_offset, x_offset)
+    res = cv2.resize(debug_image,None,fx=1/3.25, fy=1/3.25, interpolation = cv2.INTER_CUBIC)
+
+
+    if len(res.shape)==2:
+        base_image[y_offset:y_offset +res.shape[0], x_offset:x_offset+res.shape[1], 0] = res*255
+        base_image[y_offset:y_offset +res.shape[0], x_offset:x_offset+res.shape[1], 1] = res*255
+        base_image[y_offset:y_offset +res.shape[0], x_offset:x_offset+res.shape[1], 2] = res*255
+    else:
+        base_image[y_offset:y_offset + res.shape[0], x_offset:x_offset + res.shape[1]] = res
+
+    return base_image
