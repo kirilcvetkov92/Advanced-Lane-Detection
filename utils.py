@@ -323,7 +323,7 @@ def get_next_frame_lines(warped, left_fit, right_fit):
     cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
     result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
 
-    return result, left_fit, right_fit, ploty
+    return result, ploty, left_fitx, right_fitx, left_fit, right_fit
 
 
 def inverse_perspective_transform(original_image, warped, left_fitx, right_fitx, ploty):
