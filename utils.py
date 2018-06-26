@@ -201,7 +201,7 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     midpoint = np.int(histogram.shape[0] // 2)
     leftx_base = np.argmax(histogram[:midpoint])
     rightx_base = np.argmax(histogram[midpoint:]) + midpoint
-    t=0
+    t = 0
     # Choose the number of sliding windows
     nwindows = 20
     # Set height of windows
@@ -213,10 +213,14 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     # Current positions to be updated for each window
     leftx_current = leftx_base
     rightx_current = rightx_base
+
+    left_window = 0
+    right_window = 0
     # Set the width of the windows +/- margin
     margin = 100
     # Set minimum number of pixels found to recenter window
     minpix = 50
+    min_copy_pix = 150
     # Create empty lists to receive left and right lane pixel indices
     left_lane_inds = []
     right_lane_inds = []
@@ -224,9 +228,16 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     margin_left = 100
     margin_right = 100
 
+    prev_good_left_index = None
+    prev_good_right_index = None
+
+    prev_left_curr_inx = None
+    prev_right_curr_inx = None
     # Step through the windows one by one
     for window in range(nwindows):
         # Identify window boundaries in x and y (and right and left)
+        augment_left = False
+        augment_right = False
         win_y_low = warped.shape[0] - (window + 1) * window_height
         win_y_high = warped.shape[0] - window * window_height
         win_xleft_low = leftx_current - margin_left
@@ -240,19 +251,53 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
         good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
                            (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
 
-
-
-        # Append these indices to the lists
-        left_lane_inds.append(good_left_inds)
-        right_lane_inds.append(good_right_inds)
-
-
-        margin_left = max(min(margin_left+margin_left*0.10,700/(len(good_left_inds)+1)),margin_left-margin_left*0.10)
-        margin_right = max(min(margin_right+margin_right*0.10,700/(len(good_right_inds)+1)),margin_right-margin_right*0.10)
+        margin_left = max(min(margin_left + margin_left * 0.10, 700 / (len(good_left_inds) + 1)),
+                          margin_left - margin_left * 0.10)
+        margin_right = max(min(margin_right + margin_right * 0.10, 700 / (len(good_right_inds) + 1)),
+                           margin_right - margin_right * 0.10)
 
         margin_left = int(min(max(40, margin_left), 100))
         margin_right = int(min(max(40, margin_right), 100))
         # Draw the windows on the visualization image
+
+        if len(good_left_inds) < minpix:
+
+            if prev_good_left_index is not None:
+
+                augment_left = True
+
+                yc = np.copy(nonzeroy[prev_good_left_index] - window_height*(window-left_window))
+
+                xc = nonzerox[prev_good_left_index] + prev_left_curr_inx
+
+                yc = np.clip(yc, 0, 719)
+                xc = np.clip(xc, 0, 1279)
+
+                nonzeroy = np.append(nonzeroy, yc)
+                nonzerox = np.append(nonzerox, xc)
+
+                good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
+                                  (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
+
+
+        if len(good_right_inds) < minpix:
+            if prev_good_right_index is not None :
+                augment_right = True
+                yc = np.copy(nonzeroy[prev_good_right_index] - window_height*(window-right_window))
+
+                xc = nonzerox[prev_good_right_index] + prev_right_curr_inx
+
+                xc = np.clip(xc, 0, 1279)
+
+                yc = np.clip(yc, 0, 719)
+
+                nonzeroy = np.append(nonzeroy, yc)
+                nonzerox = np.append(nonzerox, xc)
+                good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
+                                   (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
+
+        left_lane_inds.append(good_left_inds)
+        right_lane_inds.append(good_right_inds)
 
 
         cv2.rectangle(out_img, (win_xleft_low, win_y_low), (win_xleft_high, win_y_high),
@@ -261,14 +306,29 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
         cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high),
                       (0, 255, 0), 2)
 
-
         # If you found > minpix pixels, recenter next window on their mean position
+
+        if len(good_left_inds) > min_copy_pix:
+            if leftx_current!=leftx_base:
+                leftx_current_tmp = np.int(np.mean(nonzerox[good_left_inds]))
+                if not augment_left:
+                    prev_left_curr_inx = leftx_current_tmp - leftx_current
+                    prev_good_left_index = good_left_inds
+                    left_window = window
+        if len(good_right_inds) > min_copy_pix:
+            if  rightx_current!=rightx_base:
+                rightx_current_tmp = np.int(np.mean(nonzerox[good_right_inds]))
+                if not augment_right:
+                    prev_right_curr_inx = rightx_current_tmp - rightx_current
+                    prev_good_right_index = good_right_inds
+                    right_window = window
+
         if len(good_left_inds) > minpix:
             leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
         if len(good_right_inds) > minpix:
             rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
 
-    # Concatenate the arrays of indices
+            # Concatenate the arrays of indices
     left_lane_inds = np.concatenate(left_lane_inds)
     right_lane_inds = np.concatenate(right_lane_inds)
 
@@ -279,13 +339,13 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     righty = nonzeroy[right_lane_inds]
 
     # Fit a second order polynomial to each
-    try :
+    try:
         left_fit = np.polyfit(lefty, leftx, 2)
     except Exception as ex:
         left_fit = prev_left_fit
 
-    try :
-     right_fit = np.polyfit(righty, rightx, 2)
+    try:
+        right_fit = np.polyfit(righty, rightx, 2)
     except Exception as ex:
         right_fit = prev_right_fit
 
