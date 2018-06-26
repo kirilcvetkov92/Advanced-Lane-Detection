@@ -90,16 +90,17 @@ def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi / 2)):
 
 
 def sobel_filter(image, ksize=3):
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    gradx = abs_sobel_thresh(gray, 'x', 10, 200)
-    grady = abs_sobel_thresh(gray, 'y', 10, 200)
-    mag_binary = mag_thresh(gray, sobel_kernel=ksize, mag_thresh=(30, 100))
-    dir_binary = dir_threshold(gray, sobel_kernel=ksize, thresh=(0.7, 1.3))
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+    s_channel = hls[:, :, 0]
+
+    gradx = abs_sobel_thresh(s_channel, 'x', 10, 200)
+    grady = abs_sobel_thresh(s_channel, 'y', 10, 200)
+    mag_binary = mag_thresh(s_channel, sobel_kernel=ksize, mag_thresh=(30, 100))
+    dir_binary = dir_threshold(s_channel, sobel_kernel=ksize, thresh=(0.7, 1.3))
     combined = np.zeros_like(dir_binary)
     combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
     combined_condition = ((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))
     return combined_condition
-
 
 def hls_filter(image):
     # Convert to HLS color space and separate the V channel
@@ -126,9 +127,9 @@ def rgb_filter(image):
 
 
 def filter_image(image):
-    sobel_condition = sobel_filter(image.copy())
-    hls_condition = hls_filter(image.copy())
-    rgb_condition = rgb_filter(image.copy())
+    sobel_condition = sobel_filter(image)
+    hls_condition = hls_filter(image)
+    rgb_condition = rgb_filter(image)
     height, width = image.shape[0], image.shape[1]
     # apply the region of interest mask
     combined_binary = np.zeros((height, width), dtype=np.uint8)
@@ -188,8 +189,10 @@ def perspective_transform_with_filled_area(original_image, filtered_image):
     return warped, filled
 
 
-def get_lane_rectangles(warped):
+def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     histogram = np.sum(warped[warped.shape[0] // 2:, :], axis=0)
+    histogram[600:750] = 0
+
     # Create an output image to draw on and  visualize the result
     out_img = np.dstack((warped, warped, warped)) * 255
     # Find the peak of the left and right halves of the histogram
@@ -199,7 +202,7 @@ def get_lane_rectangles(warped):
     rightx_base = np.argmax(histogram[midpoint:]) + midpoint
 
     # Choose the number of sliding windows
-    nwindows = 9
+    nwindows = 12
     # Set height of windows
     window_height = np.int(warped.shape[0] // nwindows)
     # Identify the x and y positions of all nonzero pixels in the image
@@ -217,6 +220,14 @@ def get_lane_rectangles(warped):
     left_lane_inds = []
     right_lane_inds = []
 
+    max_left_cluster = []
+    max_right_cluster = []
+    max_left_cluster_len = -1
+    max_right_cluster_len = -1
+    curent_left_cluster_len = 0
+    curent_right_cluster_len = 0
+    current_left_cluster = []
+    current_right_cluster = []
     # Step through the windows one by one
     for window in range(nwindows):
         # Identify window boundaries in x and y (and right and left)
@@ -226,19 +237,45 @@ def get_lane_rectangles(warped):
         win_xleft_high = leftx_current + margin
         win_xright_low = rightx_current - margin
         win_xright_high = rightx_current + margin
-        # Draw the windows on the visualization image
-        cv2.rectangle(out_img, (win_xleft_low, win_y_low), (win_xleft_high, win_y_high),
-                      (0, 255, 0), 2)
-        cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high),
-                      (0, 255, 0), 2)
+
         # Identify the nonzero pixels in x and y within the window
         good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
                           (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
         good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
                            (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
+
+
+
         # Append these indices to the lists
-        left_lane_inds.append(good_left_inds)
-        right_lane_inds.append(good_right_inds)
+        current_left_cluster.append(good_left_inds)
+        current_right_cluster.append(good_right_inds)
+
+        # Draw the windows on the visualization image
+        if len(good_left_inds) > 0 :
+            curent_left_cluster_len+=1
+            cv2.rectangle(out_img, (win_xleft_low, win_y_low), (win_xleft_high, win_y_high),
+                          (0, 255, 0), 2)
+
+        if window == nwindows-1 or len(good_left_inds)==0:
+            if (curent_left_cluster_len > max_left_cluster_len):
+                max_left_cluster_len = curent_left_cluster_len
+                max_left_cluster = current_left_cluster
+            current_left_cluster = []
+            curent_left_cluster_len = 0
+
+        if len(good_right_inds) > 0:
+            curent_right_cluster_len+=1
+            cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high),
+                          (0, 255, 0), 2)
+
+        if window == nwindows - 1 or len(good_left_inds)== 0:
+            if (curent_right_cluster_len > max_right_cluster_len):
+                max_right_cluster_len = curent_right_cluster_len
+                max_right_cluster = current_right_cluster
+            current_right_cluster = []
+            curent_right_cluster_len = 0
+
+
         # If you found > minpix pixels, recenter next window on their mean position
         if len(good_left_inds) > minpix:
             leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
@@ -246,8 +283,8 @@ def get_lane_rectangles(warped):
             rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
 
     # Concatenate the arrays of indices
-    left_lane_inds = np.concatenate(left_lane_inds)
-    right_lane_inds = np.concatenate(right_lane_inds)
+    left_lane_inds = np.concatenate(max_left_cluster)
+    right_lane_inds = np.concatenate(max_right_cluster)
 
     # Extract left and right line pixel positions
     leftx = nonzerox[left_lane_inds]
@@ -256,8 +293,15 @@ def get_lane_rectangles(warped):
     righty = nonzeroy[right_lane_inds]
 
     # Fit a second order polynomial to each
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
+    try :
+        left_fit = np.polyfit(lefty, leftx, 2)
+    except Exception as ex:
+        left_fit = prev_left_fit
+
+    try :
+     right_fit = np.polyfit(righty, rightx, 2)
+    except Exception as ex:
+        right_fit = prev_right_fit
 
     ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
@@ -269,7 +313,7 @@ def get_lane_rectangles(warped):
     return ploty, left_fitx, right_fitx, left_fit, right_fit, out_img
 
 
-def get_next_frame_lines(warped, left_fit, right_fit):
+def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_right_fit=[]):
     # Assume you now have a new warped binary image
     # from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!
@@ -293,8 +337,15 @@ def get_next_frame_lines(warped, left_fit, right_fit):
     rightx = nonzerox[right_lane_inds]
     righty = nonzeroy[right_lane_inds]
     # Fit a second order polynomial to each
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
+    try:
+        left_fit = np.polyfit(lefty, leftx, 2)
+    except Exception as ex:
+        left_fit = prev_left_fit
+
+    try:
+        right_fit = np.polyfit(righty, rightx, 2)
+    except Exception as ex:
+        right_fit = prev_right_fit
     # Generate x and y values for plotting
     ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
@@ -352,18 +403,17 @@ def inverse_perspective_transform(original_image, warped, left_fitx, right_fitx,
 
 
 def add_debug_image(base_image, debug_image, position):
-    width_offset = base_image.shape[1]//3
-    height_offset = base_image.shape[0]//3
-    y_offset = (position//3)*height_offset
-    x_offset = (position%3)*(width_offset)
-    print(y_offset, x_offset)
-    res = cv2.resize(debug_image,None,fx=1/3.25, fy=1/3.25, interpolation = cv2.INTER_CUBIC)
+    width_offset = base_image.shape[1] // 3
+    height_offset = base_image.shape[0] // 3
+    y_offset = (position // 3) * height_offset
+    x_offset = (position % 3) * (width_offset)
 
+    res = cv2.resize(debug_image, None, fx=1 / 3.25, fy=1 / 3.25, interpolation=cv2.INTER_CUBIC)
 
-    if len(res.shape)==2:
-        base_image[y_offset:y_offset +res.shape[0], x_offset:x_offset+res.shape[1], 0] = res*255
-        base_image[y_offset:y_offset +res.shape[0], x_offset:x_offset+res.shape[1], 1] = res*255
-        base_image[y_offset:y_offset +res.shape[0], x_offset:x_offset+res.shape[1], 2] = res*255
+    if len(res.shape) == 2:
+        base_image[y_offset:y_offset + res.shape[0], x_offset:x_offset + res.shape[1], 0] = res * 255
+        base_image[y_offset:y_offset + res.shape[0], x_offset:x_offset + res.shape[1], 1] = res * 255
+        base_image[y_offset:y_offset + res.shape[0], x_offset:x_offset + res.shape[1], 2] = res * 255
     else:
         base_image[y_offset:y_offset + res.shape[0], x_offset:x_offset + res.shape[1]] = res
 
