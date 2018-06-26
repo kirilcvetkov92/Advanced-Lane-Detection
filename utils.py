@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+from scipy import stats
 
 def cal_undistort(img, objpoints, imgpoints):
     # Image Calibration
@@ -159,7 +159,7 @@ def get_curvature_radius(fit, ploty):
     return curverad
 
 def get_source_points():
- return [[205,720], [1100, 720], [715, 450], [570, 450]]
+ return [[205,720], [1100, 720], [690, 450], [590, 450]]
 
 def get_destination_points(width, height, fac=0.3):
     fac = 0.3
@@ -192,7 +192,8 @@ def perspective_transform_with_filled_area(original_image, filtered_image):
 def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     histogram = np.sum(warped[warped.shape[0] // 2:, :], axis=0)
     histogram[600:750] = 0
-
+    stat_left = None
+    stat_right = None
     # Create an output image to draw on and  visualize the result
     out_img = np.dstack((warped, warped, warped)) * 255
     # Find the peak of the left and right halves of the histogram
@@ -200,9 +201,9 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     midpoint = np.int(histogram.shape[0] // 2)
     leftx_base = np.argmax(histogram[:midpoint])
     rightx_base = np.argmax(histogram[midpoint:]) + midpoint
-
+    t=0
     # Choose the number of sliding windows
-    nwindows = 12
+    nwindows = 20
     # Set height of windows
     window_height = np.int(warped.shape[0] // nwindows)
     # Identify the x and y positions of all nonzero pixels in the image
@@ -220,23 +221,18 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     left_lane_inds = []
     right_lane_inds = []
 
-    max_left_cluster = []
-    max_right_cluster = []
-    max_left_cluster_len = -1
-    max_right_cluster_len = -1
-    curent_left_cluster_len = 0
-    curent_right_cluster_len = 0
-    current_left_cluster = []
-    current_right_cluster = []
+    margin_left = 100
+    margin_right = 100
+
     # Step through the windows one by one
     for window in range(nwindows):
         # Identify window boundaries in x and y (and right and left)
         win_y_low = warped.shape[0] - (window + 1) * window_height
         win_y_high = warped.shape[0] - window * window_height
-        win_xleft_low = leftx_current - margin
-        win_xleft_high = leftx_current + margin
-        win_xright_low = rightx_current - margin
-        win_xright_high = rightx_current + margin
+        win_xleft_low = leftx_current - margin_left
+        win_xleft_high = leftx_current + margin_left
+        win_xright_low = rightx_current - margin_right
+        win_xright_high = rightx_current + margin_right
 
         # Identify the nonzero pixels in x and y within the window
         good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
@@ -247,33 +243,23 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
 
 
         # Append these indices to the lists
-        current_left_cluster.append(good_left_inds)
-        current_right_cluster.append(good_right_inds)
+        left_lane_inds.append(good_left_inds)
+        right_lane_inds.append(good_right_inds)
 
+
+        margin_left = max(min(margin_left+margin_left*0.10,700/(len(good_left_inds)+1)),margin_left-margin_left*0.10)
+        margin_right = max(min(margin_right+margin_right*0.10,700/(len(good_right_inds)+1)),margin_right-margin_right*0.10)
+
+        margin_left = int(min(max(40, margin_left), 100))
+        margin_right = int(min(max(40, margin_right), 100))
         # Draw the windows on the visualization image
-        if len(good_left_inds) > 0 :
-            curent_left_cluster_len+=1
-            cv2.rectangle(out_img, (win_xleft_low, win_y_low), (win_xleft_high, win_y_high),
-                          (0, 255, 0), 2)
 
-        if window == nwindows-1 or len(good_left_inds)==0:
-            if (curent_left_cluster_len > max_left_cluster_len):
-                max_left_cluster_len = curent_left_cluster_len
-                max_left_cluster = current_left_cluster
-            current_left_cluster = []
-            curent_left_cluster_len = 0
 
-        if len(good_right_inds) > 0:
-            curent_right_cluster_len+=1
-            cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high),
-                          (0, 255, 0), 2)
+        cv2.rectangle(out_img, (win_xleft_low, win_y_low), (win_xleft_high, win_y_high),
+                      (0, 255, 0), 2)
 
-        if window == nwindows - 1 or len(good_left_inds)== 0:
-            if (curent_right_cluster_len > max_right_cluster_len):
-                max_right_cluster_len = curent_right_cluster_len
-                max_right_cluster = current_right_cluster
-            current_right_cluster = []
-            curent_right_cluster_len = 0
+        cv2.rectangle(out_img, (win_xright_low, win_y_low), (win_xright_high, win_y_high),
+                      (0, 255, 0), 2)
 
 
         # If you found > minpix pixels, recenter next window on their mean position
@@ -283,8 +269,8 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
             rightx_current = np.int(np.mean(nonzerox[good_right_inds]))
 
     # Concatenate the arrays of indices
-    left_lane_inds = np.concatenate(max_left_cluster)
-    right_lane_inds = np.concatenate(max_right_cluster)
+    left_lane_inds = np.concatenate(left_lane_inds)
+    right_lane_inds = np.concatenate(right_lane_inds)
 
     # Extract left and right line pixel positions
     leftx = nonzerox[left_lane_inds]
@@ -321,6 +307,7 @@ def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_rig
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
     margin = 100
+
     left_lane_inds = ((nonzerox > (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy +
                                    left_fit[2] - margin)) & (nonzerox < (left_fit[0] * (nonzeroy ** 2) +
                                                                          left_fit[1] * nonzeroy + left_fit[
