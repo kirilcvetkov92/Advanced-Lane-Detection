@@ -116,6 +116,34 @@ def hls_filter(image):
     return s_binary_condition
 
 
+
+
+def hsv_filter(image):
+    # Convert to HLS color space and separate the V channel
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    s_channel = hls[:, :, 2]
+
+    # Threshold color channel
+    s_thresh_min = 160
+    s_thresh_max = 255
+    s_binary_condition = (s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)
+    return s_binary_condition
+
+
+
+
+def yuv_filter(image):
+    # Convert to HLS color space and separate the V channel
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+    s_channel = hls[:, :, 0]
+
+    # Threshold color channel
+    s_thresh_min = 150
+    s_thresh_max = 255
+    s_binary_condition = (s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)
+    return s_binary_condition
+
+
 def rgb_filter(image):
     # Extract RG colors for better yellow line isolation
     color_threshold = 155
@@ -130,10 +158,13 @@ def filter_image(image):
     sobel_condition = sobel_filter(image)
     hls_condition = hls_filter(image)
     rgb_condition = rgb_filter(image)
+    hsv_condition = hsv_filter(image)
+    yuv_condition = yuv_filter(image)
+
     height, width = image.shape[0], image.shape[1]
     # apply the region of interest mask
     combined_binary = np.zeros((height, width), dtype=np.uint8)
-    combined_binary[(rgb_condition) & (hls_condition | sobel_condition)] = 1
+    combined_binary[(rgb_condition | hsv_condition | yuv_condition) & (hls_condition | sobel_condition)] = 1
 
     mask = np.zeros_like(combined_binary)
     region_of_intersect = np.array([[0, height], [width / 2, int(0.5 * height)], [width, height]], dtype=np.int32)
@@ -159,7 +190,7 @@ def get_curvature_radius(fit, ploty):
     return curverad
 
 def get_source_points():
- return [[205,720], [1100, 720], [690, 450], [590, 450]]
+ return [[180,720], [1150, 720], [715, 450], [570, 450]]
 
 def get_destination_points(width, height, fac=0.3):
     fac = 0.3
@@ -306,7 +337,7 @@ def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_rig
     nonzero = warped.nonzero()
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
-    margin = 100
+    margin = 20
 
     left_lane_inds = ((nonzerox > (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy +
                                    left_fit[2] - margin)) & (nonzerox < (left_fit[0] * (nonzeroy ** 2) +
