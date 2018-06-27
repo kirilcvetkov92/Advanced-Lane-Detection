@@ -90,11 +90,24 @@ def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi / 2)):
 
 
 def sobel_filter(image, ksize=3):
-    hls = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
-    s_channel = hls[:, :, 0]
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+    s_channel = hls
 
-    gradx = abs_sobel_thresh(s_channel, 'x', 10, 200)
-    grady = abs_sobel_thresh(s_channel, 'y', 10, 200)
+    gradx = abs_sobel_thresh(s_channel, 'x', 30, 255)
+    grady = abs_sobel_thresh(s_channel, 'y', 10, 255)
+    mag_binary = mag_thresh(s_channel, sobel_kernel=ksize, mag_thresh=(30, 100))
+    dir_binary = dir_threshold(s_channel, sobel_kernel=ksize, thresh=(0.7, 1))
+    combined = np.zeros_like(dir_binary)
+    combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
+    combined_condition = ((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))
+    return combined_condition
+
+def sobel_filter2(image, ksize=3):
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+    s_channel = hls[:,:,2]
+
+    gradx = abs_sobel_thresh(s_channel, 'x', 30, 255)
+    grady = abs_sobel_thresh(s_channel, 'y', 10, 255)
     mag_binary = mag_thresh(s_channel, sobel_kernel=ksize, mag_thresh=(30, 100))
     dir_binary = dir_threshold(s_channel, sobel_kernel=ksize, thresh=(0.7, 1.3))
     combined = np.zeros_like(dir_binary)
@@ -102,38 +115,65 @@ def sobel_filter(image, ksize=3):
     combined_condition = ((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))
     return combined_condition
 
+
+def hsv_filter(image):
+    # Convert to HLS color space and separate the V channel
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    s_channel = hls[:, :, 2]
+
+    # Threshold color channel
+    s_thresh_min = 200
+    s_thresh_max = 255
+    s_binary_condition = (s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)
+    return s_binary_condition
+
+
+
 def hls_filter(image):
     # Convert to HLS color space and separate the V channel
     hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
     s_channel = hls[:, :, 2]
-    l_channel = hls[:, :, 1]
 
     # Threshold color channel
-    s_thresh_min = 120
+    s_thresh_min = 180
+    s_thresh_max = 200
+    s_binary_condition = (s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)
+    return s_binary_condition
+
+def yuv_filter(image):
+    # Convert to HLS color space and separate the V channel
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
+    s_channel = hls[:, :, 0]
+
+    # Threshold color channel
+    s_thresh_min = 170
     s_thresh_max = 255
-    s_binary = np.zeros_like(s_channel)
     s_binary_condition = (s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)
     return s_binary_condition
 
 
 def rgb_filter(image):
     # Extract RG colors for better yellow line isolation
-    color_threshold = 155
+    color_threshold = 215
     R = image[:, :, 0]
     G = image[:, :, 1]
-    color_combined = np.zeros_like(R)
-    r_g_condition = (R > color_threshold) & (G > color_threshold)
+    r_g_condition = (R > color_threshold) & (G>20)
     return r_g_condition
-
 
 def filter_image(image):
     sobel_condition = sobel_filter(image)
     hls_condition = hls_filter(image)
     rgb_condition = rgb_filter(image)
+    yuv_condition = yuv_filter(image)
+    hsv_condition = hsv_filter(image)
+    #sobel_condition2 = sobel_filter2(image)
+
     height, width = image.shape[0], image.shape[1]
     # apply the region of interest mask
     combined_binary = np.zeros((height, width), dtype=np.uint8)
-    combined_binary[(rgb_condition) & (hls_condition | sobel_condition)] = 1
+
+
+    combined_binary[(rgb_condition | yuv_condition | hls_condition | hsv_condition) & (sobel_condition | rgb_condition) | (sobel_condition)] = 1
 
     mask = np.zeros_like(combined_binary)
     region_of_intersect = np.array([[0, height], [width / 2, int(0.5 * height)], [width, height]], dtype=np.int32)
@@ -159,7 +199,7 @@ def get_curvature_radius(fit, ploty):
     return curverad
 
 def get_source_points():
- return [[205,720], [1100, 720], [690, 450], [590, 450]]
+ return [[205,720], [1150, 720], [680, 450], [590, 450]]
 
 def get_destination_points(width, height, fac=0.3):
     fac = 0.3
@@ -192,6 +232,10 @@ def perspective_transform_with_filled_area(original_image, filtered_image):
 def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     histogram = np.sum(warped[warped.shape[0] // 2:, :], axis=0)
     histogram[600:750] = 0
+    histogram[0:200] = 0
+    histogram[0:200] = 0
+    histogram[1200:] = 0
+
     stat_left = None
     stat_right = None
     # Create an output image to draw on and  visualize the result
@@ -306,7 +350,7 @@ def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_rig
     nonzero = warped.nonzero()
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
-    margin = 100
+    margin = 25
 
     left_lane_inds = ((nonzerox > (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy +
                                    left_fit[2] - margin)) & (nonzerox < (left_fit[0] * (nonzeroy ** 2) +
