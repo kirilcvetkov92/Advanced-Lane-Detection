@@ -95,11 +95,9 @@ def sobel_filter(image, ksize=3):
 
     gradx = abs_sobel_thresh(s_channel, 'x', 10, 200)
     grady = abs_sobel_thresh(s_channel, 'y', 10, 200)
-    mag_binary = mag_thresh(s_channel, sobel_kernel=ksize, mag_thresh=(30, 100))
-    dir_binary = dir_threshold(s_channel, sobel_kernel=ksize, thresh=(0.7, 1.3))
-    combined = np.zeros_like(dir_binary)
-    combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
-    combined_condition = ((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))
+
+    combined = np.zeros_like(grady)
+    combined_condition = ((gradx == 1) & (grady == 1))
     return combined_condition
 
 def hls_filter(image):
@@ -138,7 +136,7 @@ def yuv_filter(image):
     s_channel = hls[:, :, 0]
 
     # Threshold color channel
-    s_thresh_min = 150
+    s_thresh_min = 170
     s_thresh_max = 255
     s_binary_condition = (s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)
     return s_binary_condition
@@ -146,7 +144,7 @@ def yuv_filter(image):
 
 def rgb_filter(image):
     # Extract RG colors for better yellow line isolation
-    color_threshold = 155
+    color_threshold = 170
     R = image[:, :, 0]
     G = image[:, :, 1]
     color_combined = np.zeros_like(R)
@@ -154,7 +152,7 @@ def rgb_filter(image):
     return r_g_condition
 
 
-def filter_image(image):
+def filter_image(image, is_blind=False):
     sobel_condition = sobel_filter(image)
     hls_condition = hls_filter(image)
     rgb_condition = rgb_filter(image)
@@ -164,7 +162,10 @@ def filter_image(image):
     height, width = image.shape[0], image.shape[1]
     # apply the region of interest mask
     combined_binary = np.zeros((height, width), dtype=np.uint8)
-    combined_binary[(rgb_condition | hsv_condition | yuv_condition) & (hls_condition | sobel_condition)] = 1
+    if not is_blind:
+        combined_binary[((rgb_condition | hsv_condition | yuv_condition) & (hls_condition | sobel_condition))] = 1
+    else :
+        combined_binary[sobel_condition] = 1
 
     mask = np.zeros_like(combined_binary)
     region_of_intersect = np.array([[0, height], [width / 2, int(0.5 * height)], [width, height]], dtype=np.int32)
@@ -190,7 +191,7 @@ def get_curvature_radius(fit, ploty):
     return curverad
 
 def get_source_points():
- return [[180,720], [1150, 720], [715, 450], [570, 450]]
+ return [[220,720], [1100, 720], [780, 470], [600, 470]]
 
 def get_destination_points(width, height, fac=0.3):
     fac = 0.3
@@ -216,11 +217,10 @@ def perspective_transform_with_filled_area(original_image, filtered_image):
     warped = perspective_transform(filtered_image)
     source_points = np.array(get_source_points())
     filled = cv2.polylines(original_image.copy(), [source_points], True, (0, 255, 0), thickness=2)
-
     return warped, filled
 
 
-def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
+def get_lane_rectangles(warped, prev_left_fit=None, prev_right_fit=None, is_blind = False):
     histogram = np.sum(warped[warped.shape[0] // 2:, :], axis=0)
     histogram[600:750] = 0
     stat_left = None
@@ -245,7 +245,7 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     leftx_current = leftx_base
     rightx_current = rightx_base
     # Set the width of the windows +/- margin
-    margin = 100
+
     # Set minimum number of pixels found to recenter window
     minpix = 50
     # Create empty lists to receive left and right lane pixel indices
@@ -254,6 +254,10 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
 
     margin_left = 100
     margin_right = 100
+
+    if is_blind:
+        margin_left = 50
+        margin_right = 50
 
     # Step through the windows one by one
     for window in range(nwindows):
@@ -313,12 +317,12 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     try :
         left_fit = np.polyfit(lefty, leftx, 2)
     except Exception as ex:
-        left_fit = prev_left_fit
+        pass
 
     try :
      right_fit = np.polyfit(righty, rightx, 2)
     except Exception as ex:
-        right_fit = prev_right_fit
+        pass
 
     ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
@@ -330,7 +334,7 @@ def get_lane_rectangles(warped, prev_left_fit=[], prev_right_fit=[]):
     return ploty, left_fitx, right_fitx, left_fit, right_fit, out_img
 
 
-def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_right_fit=[]):
+def get_next_frame_lines(warped, left_fit, right_fit, is_blind=False):
     # Assume you now have a new warped binary image
     # from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!
@@ -338,6 +342,8 @@ def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_rig
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
     margin = 20
+    is_left_blind = is_blind
+    is_right_blind = is_blind
 
     left_lane_inds = ((nonzerox > (left_fit[0] * (nonzeroy ** 2) + left_fit[1] * nonzeroy +
                                    left_fit[2] - margin)) & (nonzerox < (left_fit[0] * (nonzeroy ** 2) +
@@ -347,23 +353,41 @@ def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_rig
     right_lane_inds = ((nonzerox > (right_fit[0] * (nonzeroy ** 2) + right_fit[1] * nonzeroy +
                                     right_fit[2] - margin)) & (nonzerox < (right_fit[0] * (nonzeroy ** 2) +
                                                                            right_fit[1] * nonzeroy + right_fit[
-                                                                               2] + margin)))
+                                                                           2] + margin)))
 
-    # Again, extract left and right line pixel positions
-    leftx = nonzerox[left_lane_inds]
-    lefty = nonzeroy[left_lane_inds]
-    rightx = nonzerox[right_lane_inds]
-    righty = nonzeroy[right_lane_inds]
-    # Fit a second order polynomial to each
-    try:
-        left_fit = np.polyfit(lefty, leftx, 2)
-    except Exception as ex:
-        left_fit = prev_left_fit
+    num_left_indices = len(left_lane_inds)
+    num_right_indices = len(right_lane_inds)
 
-    try:
-        right_fit = np.polyfit(righty, rightx, 2)
-    except Exception as ex:
-        right_fit = prev_right_fit
+    if ((num_left_indices>3800 and not is_blind) or (is_blind and num_left_indices>19000 )):
+            # Again, extract left and right line pixel positions
+        leftx = nonzerox[left_lane_inds]
+        lefty = nonzeroy[left_lane_inds]
+        # Fit a second order polynomial to each
+
+        is_left_blind = False
+        try:
+            left_fit = np.polyfit(lefty, leftx, 2)
+        except Exception as ex:
+            is_left_blind = True
+    else:
+        is_left_blind = True
+        print('----left')
+
+    if ((num_right_indices>3800 and not is_blind) or (is_blind and num_right_indices>19000 )):
+        rightx = nonzerox[right_lane_inds]
+        righty = nonzeroy[right_lane_inds]
+
+        is_right_blind = False
+        try:
+            right_fit = np.polyfit(righty, rightx, 2)
+        except Exception as ex:
+            is_right_blind = True
+    else :
+        print('-----Right')
+        is_right_blind = True
+
+    is_blind_current = is_right_blind or is_left_blind
+    is_blind = is_blind_current
     # Generate x and y values for plotting
     ploty = np.linspace(0, warped.shape[0] - 1, warped.shape[0])
     left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
@@ -392,7 +416,7 @@ def get_next_frame_lines(warped, left_fit, right_fit, prev_left_fit=[], prev_rig
     cv2.fillPoly(window_img, np.int_([right_line_pts]), (0, 255, 0))
     result = cv2.addWeighted(out_img, 1, window_img, 0.3, 0)
 
-    return result, ploty, left_fitx, right_fitx, left_fit, right_fit
+    return result, ploty, left_fitx, right_fitx, left_fit, right_fit, is_blind
 
 
 def inverse_perspective_transform(original_image, warped, left_fitx, right_fitx, ploty):
