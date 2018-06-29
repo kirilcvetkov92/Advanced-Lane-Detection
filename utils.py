@@ -339,7 +339,10 @@ def get_next_frame_lines(warped, left_fit, right_fit, is_blind=False):
     nonzero = warped.nonzero()
     nonzeroy = np.array(nonzero[0])
     nonzerox = np.array(nonzero[1])
+
     margin = 20
+    blind_threshold = 3800
+    retrive_from_blind_threshold = 30000
     is_left_blind = is_blind
     is_right_blind = is_blind
 
@@ -356,12 +359,10 @@ def get_next_frame_lines(warped, left_fit, right_fit, is_blind=False):
     num_left_indices = len(left_lane_inds)
     num_right_indices = len(right_lane_inds)
 
-    if ((num_left_indices>3800 and not is_blind) or (is_blind and num_left_indices>30000 )):
-            # Again, extract left and right line pixel positions
+    if ((num_left_indices>blind_threshold and not is_blind) or (is_blind and num_left_indices>retrive_from_blind_threshold)):
+        # Again, extract left and right line pixel positions
         leftx = nonzerox[left_lane_inds]
         lefty = nonzeroy[left_lane_inds]
-        # Fit a second order polynomial to each
-
         is_left_blind = False
         try:
             left_fit = np.polyfit(lefty, leftx, 2)
@@ -369,19 +370,16 @@ def get_next_frame_lines(warped, left_fit, right_fit, is_blind=False):
             is_left_blind = True
     else:
         is_left_blind = True
-        print('----left')
 
-    if ((num_right_indices>3800 and not is_blind) or (is_blind and num_right_indices>30000 )):
+    if ((num_right_indices>blind_threshold and not is_blind) or (is_blind and num_right_indices>retrive_from_blind_threshold)):
         rightx = nonzerox[right_lane_inds]
         righty = nonzeroy[right_lane_inds]
-
         is_right_blind = False
         try:
             right_fit = np.polyfit(righty, rightx, 2)
         except Exception as ex:
             is_right_blind = True
     else :
-        print('-----Right')
         is_right_blind = True
 
     is_blind_current = is_right_blind or is_left_blind
@@ -442,7 +440,7 @@ def inverse_perspective_transform(original_image, warped, left_fitx, right_fitx,
     return result
 
 
-def add_debug_image(base_image, debug_image, position):
+def add_diagnostic_image(base_image, debug_image, position):
     width_offset = base_image.shape[1] // 3
     height_offset = base_image.shape[0] // 3
     y_offset = (position // 3) * height_offset
@@ -458,3 +456,14 @@ def add_debug_image(base_image, debug_image, position):
         base_image[y_offset:y_offset + res.shape[0], x_offset:x_offset + res.shape[1]] = res
 
     return base_image
+
+
+def add_diagnostic_text(image, text, position, offset=150):
+    width_offset = image.shape[1] // 3
+    height_offset = image.shape[0] // 3
+    y_position = (position // 3) * height_offset + offset
+    x_position = (position % 3) * (width_offset)
+
+    cv2.putText(image, text, (x_position, y_position), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), thickness=2)
+
+    return image
