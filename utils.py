@@ -220,7 +220,7 @@ def perspective_transform_with_filled_area(original_image, filtered_image):
     return warped, filled
 
 
-def get_lane_rectangles(warped, prev_left_fit=None, prev_right_fit=None, is_blind = False):
+def get_lane_rectangles(warped, left_fit=None, right_fit=None, is_blind = False):
     histogram = np.sum(warped[warped.shape[0] // 2:, :], axis=0)
     histogram[600:750] = 0
     stat_left = None
