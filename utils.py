@@ -254,10 +254,8 @@ def get_lane_rectangles(warped, prev_left_fit=None, prev_right_fit=None, is_blin
 
     margin_left = 100
     margin_right = 100
-
-    if is_blind:
-        margin_left = 50
-        margin_right = 50
+    min_margin = 40
+    max_margin = 100
 
     # Step through the windows one by one
     for window in range(nwindows):
@@ -285,8 +283,8 @@ def get_lane_rectangles(warped, prev_left_fit=None, prev_right_fit=None, is_blin
         margin_left = max(min(margin_left+margin_left*0.10,700/(len(good_left_inds)+1)),margin_left-margin_left*0.10)
         margin_right = max(min(margin_right+margin_right*0.10,700/(len(good_right_inds)+1)),margin_right-margin_right*0.10)
 
-        margin_left = int(min(max(40, margin_left), 100))
-        margin_right = int(min(max(40, margin_right), 100))
+        margin_left = int(min(max(min_margin, margin_left), max_margin))
+        margin_right = int(min(max(min_margin, margin_right), max_margin))
         # Draw the windows on the visualization image
 
 
@@ -320,7 +318,7 @@ def get_lane_rectangles(warped, prev_left_fit=None, prev_right_fit=None, is_blin
         pass
 
     try :
-     right_fit = np.polyfit(righty, rightx, 2)
+        right_fit = np.polyfit(righty, rightx, 2)
     except Exception as ex:
         pass
 
@@ -358,7 +356,7 @@ def get_next_frame_lines(warped, left_fit, right_fit, is_blind=False):
     num_left_indices = len(left_lane_inds)
     num_right_indices = len(right_lane_inds)
 
-    if ((num_left_indices>3800 and not is_blind) or (is_blind and num_left_indices>19000 )):
+    if ((num_left_indices>3800 and not is_blind) or (is_blind and num_left_indices>30000 )):
             # Again, extract left and right line pixel positions
         leftx = nonzerox[left_lane_inds]
         lefty = nonzeroy[left_lane_inds]
@@ -373,7 +371,7 @@ def get_next_frame_lines(warped, left_fit, right_fit, is_blind=False):
         is_left_blind = True
         print('----left')
 
-    if ((num_right_indices>3800 and not is_blind) or (is_blind and num_right_indices>19000 )):
+    if ((num_right_indices>3800 and not is_blind) or (is_blind and num_right_indices>30000 )):
         rightx = nonzerox[right_lane_inds]
         righty = nonzeroy[right_lane_inds]
 
