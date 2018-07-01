@@ -190,8 +190,19 @@ def get_curvature_radius(fit, ploty):
     # Now our radius of curvature is in meters
     return curverad
 
+
+def get_offset_from_center(left_x, right_x, height=720, width=1280):
+
+    lane_center = (right_x[height-1] + left_x[height-1]) / 2
+    xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
+    img_center_offset = abs(width / 2 - lane_center)
+    offset_metters = xm_per_pix * img_center_offset
+    return offset_metters
+
+
 def get_source_points():
- return [[220,720], [1100, 720], [780, 470], [600, 470]]
+    return [[220,720], [1100, 720], [780, 470], [600, 470]]
+
 
 def get_destination_points(width, height, fac=0.3):
     fac = 0.3
