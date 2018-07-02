@@ -123,7 +123,7 @@ Once I applied calibration, thresholding, and a perspective transform to a road 
 Below is an example of identifying lane line pixels  
 
 <p align="center"> 
-<img src=" ./documentation/lane_lines.jpg">
+<img src="./documentation/lane_find.jpg">
 </p>
 
 
