@@ -55,12 +55,15 @@ Distortion correction that was calculated via camera calibration has been correc
 #### 2.2 Color transformation
 Description about how I used color transforms, gradients or other methods to create a thresholded binary image. 
 
-I used list of following filters 
+I used list of following thresholds 
 * Absolute sobel threshold (x, y) direction  =>  Source:  `utils.py#sobel_filter` 
 * RGB threshold on red and green colors => source `utils.py#rgb_filter` 
 * YUV threshold on s-channel => source `utils.py#yuv_filter` 
 * HSV threshold on s-channel => source `utils.py#hsv_filter`
 * HLS threshold on s-channel and l-channel => source `utils.py#hls_filter`
+
+Below, the image describes how I combine all these thresholds for creating a thresholded binary image 
+![image3]
 
 #### 2.3 Pipeline (test images)
 Describtion about how a perspective transform is performed on image with included example
