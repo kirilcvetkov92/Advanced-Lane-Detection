@@ -4,15 +4,20 @@ In this project, my goal is to write a software pipeline to identify the
 lane boundaries in a video from a front-facing camera on a car. 
 The camera calibration images, test road images, and project videos are presented as output from the pipeline.
 
+Introduction video :  
+&nbsp; &nbsp; 
+&nbsp; &nbsp; 
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+[![Introduction video](https://img.youtube.com/vi/32Nd1bot3Uc/0.jpg)](https://www.youtube.com/watch?v=32Nd1bot3Uc)
 
-The goals/steps of this project are the following:
+The goals / steps of this project are the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
 * Apply a distortion correction to raw images.
 * Use color transforms, gradients, etc., to create a thresholded binary image.
 * Apply a perspective transform to rectify binary image ("birds-eye view").
 * Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to the center.
+* Determine the curvature of the lane and vehicle position with respect to center.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
@@ -30,7 +35,7 @@ The goals/steps of this project are the following:
 ### 1 Camera Calibration
 
 #### 1.1 Camera matrix and Distortion coefficients
-A brief description of how the camera matrix and distortion coefficients are computed. 
+Brief description how the camera matrix and distortion coefficients are computed. 
 
 The code for this step is contained in the in the following method: `utils.cal_undistort` (line:5 - line:10 `utils.py`).  
 The input image is with the following dimension (1280, 720, 3)  
@@ -48,7 +53,7 @@ Then, I used the output `objpoints` and `imgpoints` to compute the camera calibr
 ### 2 Pipeline (Test images)
 
 #### 2.1 Example of applying undistortion on image
-Distortion correction that was calculated via camera calibration has been correctly applied to each image. An example of a distortion-corrected image is included below
+Distortion correction that was calculated via camera calibration has been correctly applied to each image. An example of a distortion corrected image is included below
 ![image1]
 
 
@@ -66,7 +71,7 @@ Below, the image describes how I combine all these thresholds for creating a thr
 ![image3]
 
 #### 2.3 Pipeline (test images)
-Description about how a perspective transform is performed on an image with included example
+Describtion about how a perspective transform is performed on image with included example
 
 The code for my perspective transform is located in function `perspective_transform`
 Inside this function, there is a function called `warp_perspective`, which appears in lines 224, ref : `utils.py#perspective_transform`  The `warper` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode for source points and destination points are depended on the image dimension.
@@ -113,7 +118,7 @@ Once I applied calibration, thresholding, and a perspective transform to a road 
     * **Generate 2 base window  points on left and right side where histogram 
       shows highest concentration of white colors** *Source : (utils.py#get_lane_rectangles line:244 - line:245)*  
     * **Foreach window** - *Source: (utils.py#get_lane_rectangles line:272 - line:307)*     
-        * Store all the points contained inside the previously calculated windows and compute mean X-position for both windows 
+        * Store all the points contained inside the previous calculated windows and compute mean X-position for both windows 
         * Generate 2 windows аbove the previous 2 rectangles, with the computed mean X-position respectively.  
         
     * **Generate polynomial based on the stored points from left rectangles and stored points from right rectangles** - *Source : (utils.py#get_lane_rectangles line:326 - line:334)*     
@@ -132,7 +137,7 @@ Below is an example of identifying lane line pixels
 
 
 #### 2.5 Radius of curvature and center offset 
-Description how the radius of curvature is calculated and the position of the vehicle with respect to the center.
+Description how radius of curvature is calculated and the position of the vehicle with respect to center.
 
 * **Radius of curvature calculation** - *Source : utils.py#get_curvature_radius (Line:177 - Line:191)*
  ```
@@ -141,11 +146,11 @@ Description how the radius of curvature is calculated and the position of the ve
     curverad = ((1 + (2 * fit_cr[0] * y_eval * ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0])
 ```
 
-Explanation : fit_cr[0], fit_cr[1], fit_cr[2] are the coefficients of second order polynomial scaled by meters per pixels factors (ym_per_pix, xm_per_pix)  
+Explanation : fit_cr[0], fit_cr[1], fit_cr[2] are the coeficients of second order polynomial scaled by meters per pixels factors (ym_per_pix, xm_per_pix)  
 Once the parabola coefficients are obtained, in pixels, and we convert them into meters we can use the equation radius of curvature written above.
 
 * **Offset from center calculation**  utils.py#get_offset_from_center (Line:194 - Line:200)*  
-  First, we get the first two points (P1, P2) from the polynomials representing the right and left lane at the bottom of the image.  
+  First, we get the first two points (P1,P2) from the polinomyals representing the right and left lane at the bottom of the image.  
   Then, we calculate the X-axis average of P1 and P2  
   Finally, we calculate how much the calculated average differs from the center image width  
 ```
@@ -158,7 +163,7 @@ Once the parabola coefficients are obtained, in pixels, and we convert them into
 
 #### 2.6 Example image of result
 
-The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This demonstrates that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from the center is included.
+The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This  demonstrate that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from center should be included in the writeup (or saved to a folder) and submitted with the project.
 
 * Example image of result
 ![alt text][image6]
@@ -168,7 +173,7 @@ The fit from the rectified image has been warped back onto the original image an
 ### Pipeline (video)
 
 #### 1. Video Output
-Here is a link to my final video output. The pipeline performs reasonably well on the entire project video 
+Here is a link to my final video output. The pipeline perform reasonably well on the entire project video 
 
 
 | Project Video	|  Challenge Video |  Custom Video   |
@@ -180,12 +185,12 @@ Here is a link to my final video output. The pipeline performs reasonably well o
 
 ### Discussion
 
-#### 1. Briefly discuss any problems/issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-The biggest problem of this pipeline is that it's hard for us to create the composition of thresholds on color spaces or applying filters that will work fine on all road conditions, lights, shadows, noise.     
-This pipeline may not work if we have a different shade or lighting condition around the road, and the thresholded image may not capture always the lane lanes and the information that we really need to extract.  
-I solved the problem partially, if we don't get the lane lines, I switch the lane lines drawing in blind mode, and we draw the lane lines computed before, till we get enough data to represent the lines.  
-But this is not an ideal solution, and we need a more powerful algorithm that can compose set of filters that can learn and construct the output in a more consistent way.  
-Because of that, I think that we cannot completely solve the problem with computer vision, we need machine learning algorithm that can learn how to annotate the road lane lines.  
-We can use CNN architecture and we can use this algorithm to label some videos which can be used as train input/output.
+The biggest problem of this pipeline is that it's hard for us to create composition of thresholds on color spaces or applying filters that will work fine on all road conditions, lights, shadows, noise.
+This pipeline may not work if we have different shade, or lighting condition around the road, and the thresholded image may not capture always the lane lanes and the information that we really need to extract.
+I solved the problem partially, if we don't get the lane lines, I switch the lane lines drawing in blind mode, and we draw the lane lines computed before, till we get enough data to represent the lines.
+But this is not ideal solution, and we need more powerful algorithm that can compose set of filters that can learn and construct the output in more consistent way.
+Because of that, I think that we cannot completely solve the problem with computer vision, we need machine learning algorithm that can learn how to annotate the road lane lines.
+We can use CNN architecture and we can use this algorithm to label some vides which can be used as train input/putput
 
