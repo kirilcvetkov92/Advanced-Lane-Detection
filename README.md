@@ -23,6 +23,7 @@ The goals / steps of this project are the following:
 [image4]: ./documentation/perspective.jpg "Image Transformation"
 [image5]: ./documentation/lane_find.jpg "Finding Lane lines"
 [image5]: ./documentation/transformation.jpg "Image Transformation"
+[image6]: ./documentation/output.jpg "Image Output"
 
 ---
 
@@ -127,14 +128,37 @@ Below is an example of identifying lane line pixels
 </p>
 
 
-#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+#### 2.5 Radius of curvature and center offset 
+Description how radius of curvature is calculated and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+* **Radius of curvature calculation** - *Source : utils.py#get_curvature_radius (Line:177 - Line:191)*
+ ```
+    fit_cr = np.polyfit(ploty * ym_per_pix, x * xm_per_pix, 2)
+    # Calculate the radius of curvature
+    curverad = ((1 + (2 * fit_cr[0] * y_eval * ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0])
+```
 
-#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+Explanation : fit_cr[0], fit_cr[1], fit_cr[2] are the coeficients of second order polynomial scaled by meters per pixels factors (ym_per_pix, xm_per_pix)  
+Once the parabola coefficients are obtained, in pixels, and we convert them into meters we can use the equation radius of curvature written above.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+* **Offset from center calculation**  utils.py#get_offset_from_center (Line:194 - Line:200)*
+  First, we get the first two points (P1,P2) from the polinomyals representing the right and left lane at the bottom of the image. 
+  Then, we calculate the X-axis average of P1 and P2
+  Finally, we calculate how much the calculated average differs from the center image width
+```
+    lane_center = (right_x[height-1] + left_x[height-1]) / 2
+    xm_per_pix = 3.7 / 700  # meters per pixel in x dimension
+    img_center_offset = abs(width / 2 - lane_center)
+    offset_metters = xm_per_pix * img_center_offset
+    return offset_metters
+```
 
+#### 6 Example image of result
+
+
+The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This  demonstrate that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from center should be included in the writeup (or saved to a folder) and submitted with the project.
+
+* Example image of result
 ![alt text][image6]
 
 ---
