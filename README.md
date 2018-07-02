@@ -27,7 +27,7 @@ The goals / steps of this project are the following:
 
 ---
 
-### 1. Camera Calibration
+### 1 Camera Calibration
 
 #### 1.1 Camera matrix and Distortion coefficients
 Brief description how the camera matrix and distortion coefficients are computed. 
@@ -45,7 +45,7 @@ Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be 
 Then, I used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result:  
 
 
-### 2.Pipeline (Test images)
+### 2 Pipeline (Test images)
 
 #### 2.1 Example of applying undistortion on image
 Distortion correction that was calculated via camera calibration has been correctly applied to each image. An example of a distortion corrected image is included below
@@ -62,7 +62,7 @@ I used list of following filters
 * HSV threshold on s-channel => source `utils.py#hsv_filter`
 * HLS threshold on s-channel and l-channel => source `utils.py#hls_filter`
 
-### 2.3 Pipeline (test images)
+#### 2.3 Pipeline (test images)
 Describtion about how a perspective transform is performed on image with included example
 
 The code for my perspective transform is located in function `perspective_transform`
@@ -153,7 +153,7 @@ Once the parabola coefficients are obtained, in pixels, and we convert them into
     return offset_metters
 ```
 
-#### 6 Example image of result
+#### 2.6 Example image of result
 
 The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This  demonstrate that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from center should be included in the writeup (or saved to a folder) and submitted with the project.
 
