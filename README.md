@@ -1,9 +1,9 @@
-## Advanced lane finding  
+# Advanced lane finding  
 ---
 In this project, my goal is to write a software pipeline to identify the
 lane boundaries in a video from a front-facing camera on a car. 
 The camera calibration images, test road images, and project videos are presented as output from the pipeline.
----
+
 
 The goals / steps of this project are the following:
 
