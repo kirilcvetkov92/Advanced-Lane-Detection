@@ -29,18 +29,19 @@ The goals / steps of this project are the following:
 ### Camera Calibration
 
 #### 1. Camera matrix and Distortion coefficients
-Brief description how the camera matrix and distortion coefficients are computed.
+Brief description how the camera matrix and distortion coefficients are computed. 
 
 The code for this step is contained in the in the following method: `utils.cal_undistort` (line:5 through line:10 `utils.py`).  
-The input image is with the following dimension (1280, 720, 3)
-The number of corners by x and y are assumed to be (9, 6)
-
-I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. 
+The input image is with the following dimension (1280, 720, 3)  
+The number of corners by x and y are assumed to be (9, 6)  
+I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world.  
 The code that computes object points and image points is contained in the following method : `utils.get_img_obj_points` (from line:13 through line:32 `utils.py`).  
-Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.
+
+Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  
+
 Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
 
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result:  
 
 #### 2. Example of applying undistortion on image
 Distortion correction that was calculated via camera calibration has been correctly applied to each image. An example of a distortion corrected image is included below
