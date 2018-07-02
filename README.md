@@ -182,10 +182,10 @@ Here is a link to my final video output. The pipeline performs reasonably well o
 
 #### 1. Briefly discuss any problems/issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-The biggest problem of this pipeline is that it's hard for us to create the composition of thresholds on color spaces or applying filters that will work fine on all road conditions, lights, shadows, noise.
-This pipeline may not work if we have a different shade or lighting condition around the road, and the thresholded image may not capture always the lane lanes and the information that we really need to extract.
-I solved the problem partially, if we don't get the lane lines, I switch the lane lines drawing in blind mode, and we draw the lane lines computed before, till we get enough data to represent the lines.
-But this is not an ideal solution, and we need a more powerful algorithm that can compose set of filters that can learn and construct the output in a more consistent way.
-Because of that, I think that we cannot completely solve the problem with computer vision, we need machine learning algorithm that can learn how to annotate the road lane lines.
-We can use CNN architecture and we can use this algorithm to label some videos which can be used as train input/output
+The biggest problem of this pipeline is that it's hard for us to create the composition of thresholds on color spaces or applying filters that will work fine on all road conditions, lights, shadows, noise.     
+This pipeline may not work if we have a different shade or lighting condition around the road, and the thresholded image may not capture always the lane lanes and the information that we really need to extract.  
+I solved the problem partially, if we don't get the lane lines, I switch the lane lines drawing in blind mode, and we draw the lane lines computed before, till we get enough data to represent the lines.  
+But this is not an ideal solution, and we need a more powerful algorithm that can compose set of filters that can learn and construct the output in a more consistent way.  
+Because of that, I think that we cannot completely solve the problem with computer vision, we need machine learning algorithm that can learn how to annotate the road lane lines.  
+We can use CNN architecture and we can use this algorithm to label some videos which can be used as train input/output.
 
