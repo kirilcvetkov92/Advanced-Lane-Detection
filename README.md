@@ -17,11 +17,12 @@ The goals / steps of this project are the following:
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
 [//]: # (Image References)
-
 [image1]: ./documentation/distortion.png "Undistorted"
 [image2]: ./documentation/image_processing.jpg "Image processing"
 [image3]: ./documentation/filters.jpg "Image processing"
+[image4]: ./documentation/perspective.jpg "Image Transformation"
 [image4]: ./documentation/transformation.jpg "Image Transformation"
+
 ---
 
 ### 1. Camera Calibration
@@ -54,43 +55,46 @@ Description about how I used color transforms, gradients or other methods to cre
 
 I used list of following filters 
 * Absolute sobel threshold (x, y) direction  =>  Source:  `utils.py#sobel_filter` 
-* Rgb threshold on red and green colors => source `utils.py#rgb_filter` 
+* RGB threshold on red and green colors => source `utils.py#rgb_filter` 
 * YUV threshold on s-channel => source `utils.py#yuv_filter` 
 * HSV threshold on s-channel => source `utils.py#hsv_filter`
 * HLS threshold on s-channel and l-channel => source `utils.py#hls_filter`
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+I used a combination of color and gradient thresholds to generate a binary image.
+Bellow, is an example how are all thresholds combined into one bineary image.
 
 ![alt text][image3]
 
 ### 3. Pipeline (test images)
 #### 3.1 Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform is located in function `perspective_transform`
+Inside this function, there is a function called `warp_perspective`, which appears in lines 224, ref : `utils.py#perspective_transform`  The `warper` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode for source points and destination points are depended on the image dimension.
 
 ```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
+def get_source_points():
+    return [[220,720], [1100, 720], [780, 470], [600, 470]]
+
+def get_destination_points(width, height, fac=0.3):
+    fac = 0.3
+    p1 = [fac * width, height]
+    p2 = [width - fac * width, height]
+    p3 = [width - fac * width, 0]
+    p4 = [fac * width, 0]
+    destination_points = [p1,p2,p3,p4]
+    return destination_points
 ```
 
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 220, 720      | 384, 720        | 
+| 1100, 720      | 896, 720      |
+| 780, 470     | 896, 0      |
+| 600, 470      | 384, 0        |
 
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+I verified that my perspective transform was working as expected by drawing the `source` and `destination` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
 ![alt text][image4]
 
