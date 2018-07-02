@@ -163,7 +163,7 @@ Once the parabola coefficients are obtained, in pixels, and we convert them into
 
 #### 2.6 Example image of result
 
-The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This  demonstrate that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from center should be included in the writeup (or saved to a folder) and submitted with the project.
+The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This  demonstrate that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from center is included.
 
 * Example image of result
 ![alt text][image6]
