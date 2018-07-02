@@ -5,14 +5,14 @@ lane boundaries in a video from a front-facing camera on a car.
 The camera calibration images, test road images, and project videos are presented as output from the pipeline.
 
 
-The goals / steps of this project are the following:
+The goals/steps of this project are the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
 * Apply a distortion correction to raw images.
 * Use color transforms, gradients, etc., to create a thresholded binary image.
 * Apply a perspective transform to rectify binary image ("birds-eye view").
 * Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
+* Determine the curvature of the lane and vehicle position with respect to the center.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
@@ -30,7 +30,7 @@ The goals / steps of this project are the following:
 ### 1 Camera Calibration
 
 #### 1.1 Camera matrix and Distortion coefficients
-Brief description how the camera matrix and distortion coefficients are computed. 
+A brief description of how the camera matrix and distortion coefficients are computed. 
 
 The code for this step is contained in the in the following method: `utils.cal_undistort` (line:5 - line:10 `utils.py`).  
 The input image is with the following dimension (1280, 720, 3)  
@@ -48,7 +48,7 @@ Then, I used the output `objpoints` and `imgpoints` to compute the camera calibr
 ### 2 Pipeline (Test images)
 
 #### 2.1 Example of applying undistortion on image
-Distortion correction that was calculated via camera calibration has been correctly applied to each image. An example of a distortion corrected image is included below
+Distortion correction that was calculated via camera calibration has been correctly applied to each image. An example of a distortion-corrected image is included below
 ![image1]
 
 
@@ -66,7 +66,7 @@ Below, the image describes how I combine all these thresholds for creating a thr
 ![image3]
 
 #### 2.3 Pipeline (test images)
-Describtion about how a perspective transform is performed on image with included example
+Description about how a perspective transform is performed on an image with included example
 
 The code for my perspective transform is located in function `perspective_transform`
 Inside this function, there is a function called `warp_perspective`, which appears in lines 224, ref : `utils.py#perspective_transform`  The `warper` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode for source points and destination points are depended on the image dimension.
@@ -107,13 +107,13 @@ I verified that my perspective transform was working as expected by drawing the 
 Once I applied calibration, thresholding, and a perspective transform to a road image, we have output binary output image with lines stand out clearly, as you can see on the picture above. 
 
 
-* **If it's the very first frame:***
+* **If it's the very first frame:**
     * **Create white color hitogram** - *Source: (utils.py#get_lane_rectangles line:234 - line:236)*     
     *Note : We should not start from lane line close to the center, exclude these points from the histogram* 
     * **Generate 2 base window  points on left and right side where histogram 
       shows highest concentration of white colors** *Source : (utils.py#get_lane_rectangles line:244 - line:245)*  
     * **Foreach window** - *Source: (utils.py#get_lane_rectangles line:272 - line:307)*     
-        * Store all the points contained inside the previous calculated windows and compute mean X-position for both windows 
+        * Store all the points contained inside the previously calculated windows and compute mean X-position for both windows 
         * Generate 2 windows аbove the previous 2 rectangles, with the computed mean X-position respectively.  
         
     * **Generate polynomial based on the stored points from left rectangles and stored points from right rectangles** - *Source : (utils.py#get_lane_rectangles line:326 - line:334)*     
@@ -122,7 +122,7 @@ Once I applied calibration, thresholding, and a perspective transform to a road 
 * **For all other frames :** - *Source: (utils.py#get_next_frame_lines line:346 - line:326)*   
     * **Get the right and left polynomials that are calculated in the previous frame**
     *  **Store all points contained near defined offset from polynomial lines** - *Source : (utils.py#get_next_frame_lines line:360 - line:369)*
-    *  **Generate polynomial based on the stored points from left rectangles and stored points from right rectangles** - * Source :(utils.py#get_next_frame_lines line:412 - line:418)*
+    *  **Generate polynomial based on the stored points from left rectangles and stored points from right rectangles** - *Source :(utils.py#get_next_frame_lines line:412 - line:418)*
 
 Below is an example of identifying lane line pixels  
 
@@ -132,7 +132,7 @@ Below is an example of identifying lane line pixels
 
 
 #### 2.5 Radius of curvature and center offset 
-Description how radius of curvature is calculated and the position of the vehicle with respect to center.
+Description how the radius of curvature is calculated and the position of the vehicle with respect to the center.
 
 * **Radius of curvature calculation** - *Source : utils.py#get_curvature_radius (Line:177 - Line:191)*
  ```
@@ -141,11 +141,11 @@ Description how radius of curvature is calculated and the position of the vehicl
     curverad = ((1 + (2 * fit_cr[0] * y_eval * ym_per_pix + fit_cr[1]) ** 2) ** 1.5) / np.absolute(2 * fit_cr[0])
 ```
 
-Explanation : fit_cr[0], fit_cr[1], fit_cr[2] are the coeficients of second order polynomial scaled by meters per pixels factors (ym_per_pix, xm_per_pix)  
+Explanation : fit_cr[0], fit_cr[1], fit_cr[2] are the coefficients of second order polynomial scaled by meters per pixels factors (ym_per_pix, xm_per_pix)  
 Once the parabola coefficients are obtained, in pixels, and we convert them into meters we can use the equation radius of curvature written above.
 
 * **Offset from center calculation**  utils.py#get_offset_from_center (Line:194 - Line:200)*  
-  First, we get the first two points (P1,P2) from the polinomyals representing the right and left lane at the bottom of the image.  
+  First, we get the first two points (P1, P2) from the polynomials representing the right and left lane at the bottom of the image.  
   Then, we calculate the X-axis average of P1 and P2  
   Finally, we calculate how much the calculated average differs from the center image width  
 ```
@@ -158,7 +158,7 @@ Once the parabola coefficients are obtained, in pixels, and we convert them into
 
 #### 2.6 Example image of result
 
-The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This  demonstrate that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from center should be included in the writeup (or saved to a folder) and submitted with the project.
+The fit from the rectified image has been warped back onto the original image and plotted to identify the lane boundaries. This demonstrates that the lane boundaries were correctly identified. An example image with lanes, curvature, and position from the center is included.
 
 * Example image of result
 ![alt text][image6]
@@ -168,7 +168,7 @@ The fit from the rectified image has been warped back onto the original image an
 ### Pipeline (video)
 
 #### 1. Video Output
-Here is a link to my final video output. The pipeline perform reasonably well on the entire project video 
+Here is a link to my final video output. The pipeline performs reasonably well on the entire project video 
 
 
 | Project Video	|  Challenge Video |  Custom Video   |
@@ -180,6 +180,12 @@ Here is a link to my final video output. The pipeline perform reasonably well on
 
 ### Discussion
 
-#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 1. Briefly discuss any problems/issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+The biggest problem of this pipeline is that it's hard for us to create the composition of thresholds on color spaces or applying filters that will work fine on all road conditions, lights, shadows, noise.
+This pipeline may not work if we have a different shade or lighting condition around the road, and the thresholded image may not capture always the lane lanes and the information that we really need to extract.
+I solved the problem partially, if we don't get the lane lines, I switch the lane lines drawing in blind mode, and we draw the lane lines computed before, till we get enough data to represent the lines.
+But this is not an ideal solution, and we need a more powerful algorithm that can compose set of filters that can learn and construct the output in a more consistent way.
+Because of that, I think that we cannot completely solve the problem with computer vision, we need machine learning algorithm that can learn how to annotate the road lane lines.
+We can use CNN architecture and we can use this algorithm to label some videos which can be used as train input/output
+
