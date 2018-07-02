@@ -164,9 +164,14 @@ The fit from the rectified image has been warped back onto the original image an
 
 ### Pipeline (video)
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
+#### 1. Video Output
+Here is a link to my final video output. The pipeline perform reasonably well on the entire project video 
 
-Here's a [link to my video result](./project_video.mp4)
+
+| Project Video	|  Challenge Video |  Custom Video   |
+|:-----------:|:----------:|:---------:|
+| [![Introduction video](https://img.youtube.com/vi/OaEXivXLDf0/0.jpg)](https://www.youtube.com/watch?v=OaEXivXLDf0)   	| [![Introduction video](https://img.youtube.com/vi/PnQ2Jzpkhqw/0.jpg)](https://www.youtube.com/watch?v=PnQ2Jzpkhqw)| [![Introduction video](https://img.youtube.com/vi/32Nd1bot3Uc/0.jpg)](https://www.youtube.com/watch?v=32Nd1bot3Uc) | 
+
 
 ---
 
