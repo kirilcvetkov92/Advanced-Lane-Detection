@@ -21,7 +21,8 @@ The goals / steps of this project are the following:
 [image2]: ./documentation/image_processing.jpg "Image processing"
 [image3]: ./documentation/filters.jpg "Image processing"
 [image4]: ./documentation/perspective.jpg "Image Transformation"
-[image4]: ./documentation/transformation.jpg "Image Transformation"
+[image5]: ./documentation/lane_find.jpg "Finding Lane lines"
+[image5]: ./documentation/transformation.jpg "Image Transformation"
 
 ---
 
@@ -47,7 +48,7 @@ Then, I used the output `objpoints` and `imgpoints` to compute the camera calibr
 
 #### 2.1 Example of applying undistortion on image
 Distortion correction that was calculated via camera calibration has been correctly applied to each image. An example of a distortion corrected image is included below
-![alt text][image1]
+![image1]
 
 
 #### 2.2 Color transformation
@@ -60,13 +61,8 @@ I used list of following filters
 * HSV threshold on s-channel => source `utils.py#hsv_filter`
 * HLS threshold on s-channel and l-channel => source `utils.py#hls_filter`
 
-I used a combination of color and gradient thresholds to generate a binary image.
-Bellow, is an example how are all thresholds combined into one bineary image.
-
-![alt text][image3]
-
-### 3. Pipeline (test images)
-#### 3.1 Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
+### 2.3 Pipeline (test images)
+Describtion about how a perspective transform is performed on image with included example
 
 The code for my perspective transform is located in function `perspective_transform`
 Inside this function, there is a function called `warp_perspective`, which appears in lines 224, ref : `utils.py#perspective_transform`  The `warper` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode for source points and destination points are depended on the image dimension.
@@ -96,13 +92,40 @@ This resulted in the following source and destination points:
 
 I verified that my perspective transform was working as expected by drawing the `source` and `destination` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
-![alt text][image4]
 
-#### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+<p align="center"> 
+<img src="./documentation/perspective.jpg">
+</p>
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
 
-![alt text][image5]
+#### 2.4 Identifying lane line pixels and Polynomial fit
+
+Once I applied calibration, thresholding, and a perspective transform to a road image, we have output binary output image with lines stand out clearly, as you can see on the picture above. 
+
+
+* **If it's the very first frame:***
+    * **Create white color hitogram** - *Source: (utils.py#get_lane_rectangles line:234 - line:236)*     
+    *Note : We should not start from lane line close to the center, exclude these points from the histogram* 
+    * **Generate 2 base window  points on left and right side where histogram 
+      shows highest concentration of white colors** *Source : (utils.py#get_lane_rectangles line:244 - line:245)*  
+    * **Foreach window** - *Source: (utils.py#get_lane_rectangles line:272 - line:307)*     
+        * Store all the points contained inside the previous calculated windows and compute mean X-position for both windows 
+        * Generate 2 windows аbove the previous 2 rectangles, with the computed mean X-position respectively.  
+        
+    * **Generate polynomial based on the stored points from left rectangles and stored points from right rectangles** - *Source : (utils.py#get_lane_rectangles line:326 - line:334)*     
+
+
+* **For all other frames :** - *Source: (utils.py#get_next_frame_lines line:346 - line:326)*   
+    * **Get the right and left polynomials that are calculated in the previous frame**
+    *  **Store all points contained near defined offset from polynomial lines** - *Source : (utils.py#get_next_frame_lines line:360 - line:369)*
+    *  **Generate polynomial based on the stored points from left rectangles and stored points from right rectangles** - * Source :(utils.py#get_next_frame_lines line:412 - line:418)*
+
+Below is an example of identifying lane line pixels  
+
+<p align="center"> 
+<img src=" ./documentation/lane_lines.jpg">
+</p>
+
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
