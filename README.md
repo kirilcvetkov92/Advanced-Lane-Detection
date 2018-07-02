@@ -185,7 +185,7 @@ Here is a link to my final video output. The pipeline perform reasonably well on
 
 ### 4 Discussion
 
-#### 4.1 Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+Briefly discussion about problems / issues I faced in my implementation of this project.  Where will my pipeline likely fail?  What could we do to make it more robust in the future?
 
 The biggest problem of this pipeline is that it's hard for us to create composition of thresholds on color spaces or applying filters that will work fine on all road conditions, lights, shadows, noise.
 This pipeline may not work if we have different shade, or lighting condition around the road, and the thresholded image may not capture always the lane lanes and the information that we really need to extract.
